@@ -123,11 +123,15 @@ export async function putObject(
 ): Promise<void> {
   const cfg = s3();
   if (cfg) {
-    const headers: Record<string, string> = { "Content-Type": opts.contentType };
+    const payload = new Uint8Array(body);
+    const headers: Record<string, string> = {
+      "Content-Type": opts.contentType,
+      "Content-Length": String(payload.byteLength),
+    };
     if (opts.disposition) headers["Content-Disposition"] = opts.disposition;
     const res = await cfg.client.fetch(objectUrl(cfg, key), {
       method: "PUT",
-      body: new Uint8Array(body),
+      body: payload,
       headers,
     });
     if (!res.ok) throw new Error(`Storage upload failed (${res.status})`);
