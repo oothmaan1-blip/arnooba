@@ -1,0 +1,145 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+:root {
+  /* Beige & walnut. Beige for paper and surfaces, walnut brown for ink and
+     actions; every pair below keeps WCAG AA contrast for text. */
+  --bg: #f6efe3;
+  --surface: #fffaf2;
+  --surface-2: #efe3cf;
+  --ink: #3a2a1c;
+  --muted: #6c5643;
+  --line: #e3d4bd;
+  --accent: #85552b;
+  --accent-hover: #6b4220;
+  --accent-soft: #f1e1c8;
+  --on-accent: #fffaf2;
+  --ring: #b9874f;
+  /* Gradients: warm beige wash for the hero, walnut for primary buttons. */
+  --wash-from: #ead9bd;
+  --wash-to: #f6efe3;
+  --walnut-from: #9a6537;
+  --walnut-to: #74481f;
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  /* Night: deep walnut with beige text. */
+  --bg: #1b140e;
+  --surface: #251b13;
+  --surface-2: #31241a;
+  --ink: #f2e6d4;
+  --muted: #c0aa8e;
+  --line: #44331f;
+  --accent: #d9ab78;
+  --accent-hover: #e8c49b;
+  --accent-soft: #3a2a1b;
+  --on-accent: #1b140e;
+  --ring: #d9ab78;
+  --wash-from: #2e2117;
+  --wash-to: #1b140e;
+  --walnut-from: #e0b483;
+  --walnut-to: #c99563;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
+  --font-sans: var(--font-plex), ui-sans-serif, system-ui, "Segoe UI", Tahoma, sans-serif;
+  --font-brand: var(--font-reem), var(--font-plex), sans-serif;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+}
+
+::selection {
+  background: var(--accent-soft);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+@utility btn-primary {
+  @apply btn bg-accent text-on-accent shadow-sm shadow-[color-mix(in_srgb,var(--accent)_25%,transparent)] hover:bg-accent-hover;
+  background-image: linear-gradient(to bottom, var(--walnut-from), var(--walnut-to));
+  &:hover {
+    background-image: linear-gradient(to bottom, var(--walnut-to), var(--walnut-to));
+  }
+}
+
+@utility btn-secondary {
+  @apply btn border border-line bg-surface text-ink hover:bg-surface-2;
+}
+
+@utility btn-ghost {
+  @apply btn text-ink hover:bg-surface-2;
+}
+
+@utility btn-danger {
+  @apply btn border border-red-300 bg-surface text-red-700 hover:bg-red-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-950;
+}
+
+@utility input {
+  @apply w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-sm text-ink placeholder:text-muted focus:border-accent focus:outline-none;
+}
+
+@utility label {
+  @apply mb-1.5 block text-sm font-medium text-ink;
+}
+
+/* Soft beige wash, used behind the home hero and page headers. */
+@utility wash {
+  background-image: linear-gradient(to bottom, var(--wash-from), var(--wash-to));
+}
+
+@utility card {
+  @apply rounded-2xl border border-line bg-surface;
+}
+
+@utility chip {
+  @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 py-1.5 text-sm text-muted transition-colors hover:border-accent hover:text-ink;
+}
+
+@utility chip-active {
+  @apply border-transparent bg-accent-soft text-accent hover:border-transparent hover:text-accent;
+}
+
+/* Reader toolbar button: works on any reader theme background. */
+@utility rbtn {
+  @apply inline-flex h-10 min-w-10 shrink-0 items-center justify-center rounded-lg transition-colors hover:bg-[color-mix(in_srgb,currentColor_10%,transparent)];
+}
+
+/* PDF pages are images, so reader themes are applied as filters. */
+.pdf-sepia canvas {
+  filter: sepia(0.35) brightness(0.96);
+}
+
+.pdf-dark canvas {
+  filter: invert(0.9) hue-rotate(180deg);
+}
+
+.pdf-dark .pdf-page {
+  background: #1a1a1a;
+}

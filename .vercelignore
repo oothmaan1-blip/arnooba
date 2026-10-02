@@ -1,0 +1,9 @@
+# Never upload these with `vercel deploy`: secrets, the local database and
+# book files (production uses DATABASE_URL and the S3/R2 bucket instead).
+.env*
+!.env.example
+.data
+storage
+node_modules
+.next
+public/pdfjs
