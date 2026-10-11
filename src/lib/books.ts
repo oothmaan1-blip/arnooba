@@ -205,7 +205,20 @@ export async function searchBooks(
   where.push(...filterClauses(opts, params));
   // search_text starts with the title, so an earlier match ranks higher.
   const orderBy = `strpos(search_text, $${params.length + 1}) ASC, ${ORDER_BY.popular}`;
-  return pageOf(where, params, orderBy, [terms[0]], p);
+  const exact = await pageOf(where, params, orderBy, [terms[0]], p);
+  if (exact.total || terms.length === 1) return exact;
+
+  // If a longer query contains a typo or an extra word, still show matches
+  // for any recognized term instead of hiding a book that is in the catalog.
+  const partialParams: unknown[] = [];
+  const partialWhere = [
+    `(${terms.map((term) => {
+      partialParams.push(`%${escapeLike(term)}%`);
+      return `search_text LIKE $${partialParams.length}`;
+    }).join(" OR ")})`,
+    ...filterClauses(opts, partialParams),
+  ];
+  return pageOf(partialWhere, partialParams, ORDER_BY.popular, [], p);
 }
 
 export async function getBook(id: number, opts: { includeUnpublished?: boolean } = {}): Promise<Book | null> {
