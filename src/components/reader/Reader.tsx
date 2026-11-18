@@ -356,10 +356,6 @@ export default function Reader({ book, format, fileUrl, fileSize, readHref, down
             lang={book.lang}
             initialCfi={saved?.location ?? null}
             theme={prefs.theme}
-            fontScale={prefs.fontScale}
-            font={prefs.font}
-            lineHeight={prefs.lineHeight}
-            pageMargin={prefs.pageMargin}
             handleRef={epubRef}
             onReady={onReady}
             onLocation={onEpubLocation}

@@ -4,7 +4,7 @@
 // content iframe is sandboxed without allow-scripts.
 import { useEffect, useEffectEvent, useRef, useState, type RefObject } from "react";
 import type { Book as EpubBook, Location, NavItem, Rendition } from "epubjs";
-import { FONT_OPTIONS, READER_THEMES, type ReaderFont, type ReaderTheme } from "./theme";
+import { READER_THEMES, type ReaderTheme } from "./theme";
 
 export interface EpubHandle {
   next(): void;
@@ -25,10 +25,6 @@ interface Props {
   lang: "ar" | "en";
   initialCfi: string | null;
   theme: ReaderTheme;
-  fontScale: number;
-  font: ReaderFont;
-  lineHeight: number;
-  pageMargin: number;
   handleRef: RefObject<EpubHandle | null>;
   onReady(): void;
   onLocation(cfi: string, percent: number | null, chapter: string, atEnd: boolean): void;
@@ -128,7 +124,6 @@ function registerThemes(rendition: Rendition, lang: "ar" | "en") {
       "body *": {
         color: "inherit !important",
         "background-color": "transparent !important",
-        "font-family": "inherit !important",
         ...(textAlignment ? { "text-align": textAlignment, "text-align-last": textAlignment } : {}),
       },
       a: { color: `${t.accent} !important` },
@@ -137,42 +132,14 @@ function registerThemes(rendition: Rendition, lang: "ar" | "en") {
   }
 }
 
-function applyTypography(rendition: Rendition, font: ReaderFont, lineHeight: number, pageMargin: number) {
-  const fontOption = FONT_OPTIONS[font];
-  const family = fontOption.variable
-    ? getComputedStyle(document.documentElement).getPropertyValue(fontOption.variable).trim() || fontOption.css
-    : fontOption.css;
-  const bundledFamily = fontOption.fontFace ?? (fontOption.variable ? family.replace(/["']/g, "").split(",")[0].trim() : null);
-  if (bundledFamily) {
-    const contents = rendition.getContents() as unknown as { addStylesheetCss(css: string, key: string): Promise<void> }[];
-    const rules: string[] = [];
-    for (const sheet of Array.from(document.styleSheets)) {
-      try {
-        for (const rule of Array.from(sheet.cssRules)) {
-          if (rule.type !== CSSRule.FONT_FACE_RULE) continue;
-          const fontRule = rule as CSSFontFaceRule;
-          const declared = fontRule.style.getPropertyValue("font-family").replace(/["']/g, "").trim();
-          if (declared === bundledFamily) rules.push(fontRule.cssText);
-        }
-      } catch {
-        // Ignore cross-origin stylesheets; the app's own bundled font sheets are same-origin.
-      }
-    }
-    if (rules.length) for (const content of contents) void content.addStylesheetCss(rules.join("\n"), `arnooba-${font}`);
-  }
-  rendition.themes.font(family);
-  rendition.themes.override("line-height", String(lineHeight), true);
-  rendition.themes.override("padding-inline", `${pageMargin}%`, true);
-}
-
-export default function EpubView({ url, lang, initialCfi, theme, fontScale, font, lineHeight, pageMargin, handleRef, ...events }: Props) {
+export default function EpubView({ url, lang, initialCfi, theme, handleRef, ...events }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const renditionRef = useRef<Rendition | null>(null);
   const selectedTextRef = useRef("");
   const rtl = lang === "ar";
   const [turningPage, setTurningPage] = useState(false);
 
-  const initialLook = useEffectEvent(() => ({ theme, fontScale, font, lineHeight, pageMargin }));
+  const initialLook = useEffectEvent(() => ({ theme }));
   const ready = useEffectEvent(() => events.onReady());
   const located = useEffectEvent((cfi: string, percent: number | null, chapter: string, atEnd: boolean) => events.onLocation(cfi, percent, chapter, atEnd));
   const gotToc = useEffectEvent((items: TocItem[]) => events.onToc(items));
@@ -264,13 +231,9 @@ export default function EpubView({ url, lang, initialCfi, theme, fontScale, font
         registerThemes(rendition, lang);
         const look = initialLook();
         rendition.themes.select(look.theme);
-        rendition.themes.fontSize(`${look.fontScale}%`);
-        applyTypography(rendition, look.font, look.lineHeight, look.pageMargin);
 
         rendition.on("relocated", (location: Location) => {
           bindSelectionCapture();
-          const look = initialLook();
-          applyTypography(rendition, look.font, look.lineHeight, look.pageMargin);
           const cfi = location.start.cfi;
           const percent = book && locationsReady ? book.locations.percentageFromCfi(cfi) * 100 : null;
           const chapterEnd = location.atEnd || location.start.href !== location.end.href || (location.start.displayed.total > 0 && location.start.displayed.page >= location.start.displayed.total);
@@ -367,14 +330,6 @@ export default function EpubView({ url, lang, initialCfi, theme, fontScale, font
   useEffect(() => {
     renditionRef.current?.themes.select(theme);
   }, [theme]);
-
-  useEffect(() => {
-    renditionRef.current?.themes.fontSize(`${fontScale}%`);
-  }, [fontScale]);
-
-  useEffect(() => {
-    if (renditionRef.current) applyTypography(renditionRef.current, font, lineHeight, pageMargin);
-  }, [font, lineHeight, pageMargin]);
 
   return (
     <div className={`mx-auto h-full w-full max-w-3xl px-2 sm:px-6${turningPage ? " reader-page-turn" : ""}`}>

@@ -1,37 +1,5 @@
 @import "tailwindcss";
 
-@font-face {
-  font-family: "Amiri";
-  src: url("/fonts/amiri-arabic-400.woff2") format("woff2");
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Amiri";
-  src: url("/fonts/amiri-arabic-700.woff2") format("woff2");
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Cairo";
-  src: url("/fonts/cairo-arabic-400.woff2") format("woff2");
-  font-style: normal;
-  font-weight: 400 700;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Tajawal";
-  src: url("/fonts/tajawal-arabic-400.woff2") format("woff2");
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-}
-
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *, [data-theme="arnooba"], [data-theme="arnooba"] *));
 
 :root {

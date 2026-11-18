@@ -11,22 +11,9 @@ export const READER_THEMES: Record<
   arnooba: { label: "أرنوبة", bg: "#1b1a35", fg: "#eeedff", muted: "#b7b5d8", line: "#38375d", accent: "#aebaff" },
 };
 
-export const FONT_OPTIONS = {
-  system: { label: "IBM Plex Arabic · أرنوبة", css: '"IBM Plex Sans Arabic", system-ui, sans-serif', variable: "--font-plex", fontFace: null },
-  amiri: { label: "Amiri · نسخي", css: '"Amiri", "Noto Naskh Arabic", "Times New Roman", serif', variable: null, fontFace: "Amiri" },
-  cairo: { label: "Cairo", css: '"Cairo", "Noto Sans Arabic", Arial, sans-serif', variable: null, fontFace: "Cairo" },
-  tajawal: { label: "Tajawal", css: '"Tajawal", "Noto Sans Arabic", Arial, sans-serif', variable: null, fontFace: "Tajawal" },
-} as const;
-
-export type ReaderFont = keyof typeof FONT_OPTIONS;
-
 export interface ReaderPrefs {
   theme: ReaderTheme;
-  fontScale: number;
   zoom: number;
-  font: ReaderFont;
-  lineHeight: number;
-  pageMargin: number;
 }
 
 const PREFS_KEY = "arnooba:reader:v1";
@@ -35,22 +22,14 @@ export function loadPrefs(): ReaderPrefs {
   const siteTheme = document.documentElement.getAttribute("data-theme");
   const fallback: ReaderPrefs = {
     theme: siteTheme === "arnooba" ? "arnooba" : siteTheme === "dark" ? "dark" : "light",
-    fontScale: 100,
     zoom: 1,
-    font: "system",
-    lineHeight: 1.8,
-    pageMargin: 3,
   };
   try {
     const saved = JSON.parse(localStorage.getItem(PREFS_KEY) ?? "null") as Partial<ReaderPrefs> | null;
     if (!saved) return fallback;
     return {
       theme: saved.theme && saved.theme in READER_THEMES ? saved.theme : fallback.theme,
-      fontScale: clamp(Number(saved.fontScale) || 100, 70, 220),
       zoom: clamp(Number(saved.zoom) || 1, 0.5, 3),
-      font: saved.font && saved.font in FONT_OPTIONS ? saved.font : fallback.font,
-      lineHeight: [1.6, 1.8, 2, 2.2].includes(Number(saved.lineHeight)) ? Number(saved.lineHeight) : fallback.lineHeight,
-      pageMargin: [1, 3, 5, 7].includes(Number(saved.pageMargin)) ? Number(saved.pageMargin) : fallback.pageMargin,
     };
   } catch {
     return fallback;
