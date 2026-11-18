@@ -102,15 +102,25 @@ function crispWidth(available: number): number {
 }
 
 function registerThemes(rendition: Rendition, lang: "ar" | "en") {
+  const textAlignment = lang === "ar" ? "right !important" : undefined;
   for (const [name, t] of Object.entries(READER_THEMES)) {
     rendition.themes.register(name, {
       body: {
         color: `${t.fg} !important`,
         background: `${t.bg} !important`,
         "line-height": lang === "ar" ? "1.95 !important" : "1.65 !important",
+        ...(textAlignment ? { "text-align": textAlignment, "text-align-last": textAlignment } : {}),
       },
-      "p, li, blockquote, dd": { "line-height": "inherit !important" },
-      "body *": { color: "inherit !important", "background-color": "transparent !important", "font-family": "inherit !important" },
+      "p, li, blockquote, dd": {
+        "line-height": "inherit !important",
+        ...(textAlignment ? { "text-align": textAlignment, "text-align-last": textAlignment, "word-spacing": "normal !important" } : {}),
+      },
+      "body *": {
+        color: "inherit !important",
+        "background-color": "transparent !important",
+        "font-family": "inherit !important",
+        ...(textAlignment ? { "text-align": textAlignment, "text-align-last": textAlignment } : {}),
+      },
       a: { color: `${t.accent} !important` },
       img: { "max-width": "100% !important", height: "auto !important" },
     });
