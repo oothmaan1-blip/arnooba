@@ -5,14 +5,14 @@ import { Cover } from "./Cover";
 
 export function BookCard({ book, eager }: { book: BookCardData; eager?: boolean }) {
   return (
-    <Link href={book.href} className="group block rounded-lg" prefetch={false}>
+    <Link href={book.href} className="group block rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4 focus-visible:ring-offset-bg active:scale-[0.985] motion-reduce:active:scale-100" prefetch={false}>
       <Cover
         id={book.id}
         title={book.title}
         author={book.author}
         coverUrl={book.coverUrl}
         eager={eager}
-        className="shadow-sm ring-1 ring-black/5 transition duration-200 group-hover:-translate-y-1 group-hover:shadow-lg"
+        className="shadow-sm ring-1 ring-black/5 transition duration-200 group-hover:-translate-y-1 group-hover:shadow-lg group-active:translate-y-0 group-active:shadow-md motion-reduce:transition-none"
       />
       <h3 dir="auto" className="mt-2.5 line-clamp-2 text-sm font-semibold leading-6 group-hover:text-accent">
         {book.title}

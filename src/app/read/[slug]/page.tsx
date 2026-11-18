@@ -4,7 +4,6 @@ import { ReaderClient } from "@/components/reader/ReaderClient";
 import { bookFromParam } from "@/lib/book-page";
 import { toCard } from "@/lib/book-view";
 import { downloadPath, readPath } from "@/lib/paths";
-import { publicUrl } from "@/lib/storage";
 
 export async function generateMetadata({ params }: PageProps<"/read/[slug]">): Promise<Metadata> {
   const book = await bookFromParam((await params).slug);
@@ -23,7 +22,7 @@ export default async function ReadPage({ params, searchParams }: PageProps<"/rea
     (requested === "pdf" || requested === "epub") && has[requested] ? requested : has.epub ? "epub" : has.pdf ? "pdf" : null;
   if (!format) notFound();
 
-  const key = format === "pdf" ? book.pdfKey! : book.epubKey!;
+  const fileSize = format === "pdf" ? book.pdfSize : book.epubSize;
   const other = format === "pdf" ? "epub" : "pdf";
   const card = toCard(book);
 
@@ -31,7 +30,8 @@ export default async function ReadPage({ params, searchParams }: PageProps<"/rea
     <ReaderClient
       book={{ id: book.id, title: book.title, author: book.author, lang: book.lang, href: card.href, coverUrl: card.coverUrl }}
       format={format}
-      fileUrl={publicUrl(key)}
+      fileUrl={`/api/books/${book.id}/file?format=${format}`}
+      fileSize={fileSize}
       readHref={readPath(book, format)}
       downloadHref={downloadPath(book, format)}
       switchHref={has[other] ? readPath(book, other) : undefined}

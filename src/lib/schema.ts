@@ -72,4 +72,24 @@ export const MIGRATIONS: string[] = [
   UPDATE books SET complete = true WHERE source = 'Project Gutenberg';
   CREATE INDEX books_lang_film_idx ON books (lang) WHERE film <> '';
   `,
+  // 4: weekly reading trends and account-free chapter reactions.
+  `
+  CREATE TABLE book_read_events (
+    id         bigserial PRIMARY KEY,
+    book_id    integer NOT NULL REFERENCES books (id) ON DELETE CASCADE,
+    created_at timestamptz NOT NULL DEFAULT now()
+  );
+  CREATE INDEX book_read_events_recent_idx ON book_read_events (created_at DESC, book_id);
+
+  CREATE TABLE chapter_reactions (
+    book_id      integer NOT NULL REFERENCES books (id) ON DELETE CASCADE,
+    chapter_key  text NOT NULL,
+    visitor_hash text NOT NULL,
+    reaction     text NOT NULL CHECK (reaction IN ('like', 'exciting', 'moving', 'shock')),
+    created_at   timestamptz NOT NULL DEFAULT now(),
+    updated_at   timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (book_id, chapter_key, visitor_hash)
+  );
+  CREATE INDEX chapter_reactions_book_chapter_idx ON chapter_reactions (book_id, chapter_key);
+  `,
 ];

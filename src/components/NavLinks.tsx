@@ -12,6 +12,7 @@ const LINKS = [
   { href: "/ar", label: "كتب عربية" },
   { href: "/en", label: "كتب إنكليزية" },
   { href: "/shelf", label: "رفّي" },
+  { href: "/stats", label: "إحصائياتي" },
 ];
 
 function isActive(pathname: string, href: string) {

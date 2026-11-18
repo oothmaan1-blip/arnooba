@@ -1,6 +1,38 @@
 @import "tailwindcss";
 
-@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+@font-face {
+  font-family: "Amiri";
+  src: url("/fonts/amiri-arabic-400.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Amiri";
+  src: url("/fonts/amiri-arabic-700.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Cairo";
+  src: url("/fonts/cairo-arabic-400.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Tajawal";
+  src: url("/fonts/tajawal-arabic-400.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *, [data-theme="arnooba"], [data-theme="arnooba"] *));
 
 :root {
   /* Beige & walnut. Beige for paper and surfaces, walnut brown for ink and
@@ -41,6 +73,25 @@
   --wash-to: #1b140e;
   --walnut-from: #e0b483;
   --walnut-to: #c99563;
+  color-scheme: dark;
+}
+
+[data-theme="arnooba"] {
+  --bg: #17172b;
+  --surface: #20203a;
+  --surface-2: #2a2a49;
+  --ink: #eeedff;
+  --muted: #b8b7d7;
+  --line: #3b3a60;
+  --accent: #b3a7ff;
+  --accent-hover: #c7beff;
+  --accent-soft: #302d55;
+  --on-accent: #17172b;
+  --ring: #9dafff;
+  --wash-from: #292646;
+  --wash-to: #17172b;
+  --walnut-from: #8884e8;
+  --walnut-to: #5d72c8;
   color-scheme: dark;
 }
 
@@ -142,4 +193,34 @@ body {
 
 .pdf-dark .pdf-page {
   background: #1a1a1a;
+}
+
+.pdf-oled canvas {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+.pdf-oled .pdf-page {
+  background: #000;
+  box-shadow: none;
+}
+
+.pdf-arnooba canvas {
+  filter: invert(0.88) sepia(0.16) hue-rotate(205deg) saturate(0.8);
+}
+
+.pdf-arnooba .pdf-page {
+  background: #1b1a35;
+}
+
+@keyframes reader-page-enter {
+  from { opacity: 0.72; transform: translateY(3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.reader-page-turn {
+  animation: reader-page-enter 180ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reader-page-turn { animation: none; }
 }

@@ -1,14 +1,16 @@
 "use client";
 
-import { Moon, Sun } from "lucide-react";
+import { Palette } from "lucide-react";
 
 export function ThemeToggle() {
   function toggle() {
     const root = document.documentElement;
-    const next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    const current = root.getAttribute("data-theme");
+    const next = current === "light" ? "dark" : current === "dark" ? "arnooba" : "light";
     root.setAttribute("data-theme", next);
+    const color = next === "dark" ? "#1b140e" : next === "arnooba" ? "#17172b" : "#f6efe3";
     document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => {
-      meta.setAttribute("content", next === "dark" ? "#1b140e" : "#f6efe3");
+      meta.setAttribute("content", color);
     });
     try {
       localStorage.setItem("arnooba:theme", next);
@@ -18,9 +20,8 @@ export function ThemeToggle() {
   }
 
   return (
-    <button type="button" onClick={toggle} className="btn-ghost h-10 w-10 p-0" aria-label="تبديل الوضع الليلي">
-      <Moon className="h-5 w-5 dark:hidden" aria-hidden="true" />
-      <Sun className="hidden h-5 w-5 dark:block" aria-hidden="true" />
+    <button type="button" onClick={toggle} className="btn-ghost h-10 w-10 p-0" aria-label="تغيير مظهر الموقع: فاتح أو ليلي أو أرنوبة" title="فاتح · ليلي · أرنوبة">
+      <Palette className="h-5 w-5" aria-hidden="true" />
     </button>
   );
 }

@@ -21,6 +21,7 @@ export function Footer() {
             <li><Link className="hover:text-ink" href="/ar">كتب عربية</Link></li>
             <li><Link className="hover:text-ink" href="/en">كتب إنكليزية</Link></li>
             <li><Link className="hover:text-ink" href="/shelf">رفّي</Link></li>
+            <li><Link className="hover:text-ink" href="/stats">إحصائياتي القرائية</Link></li>
           </ul>
         </nav>
         <nav aria-label="عن الموقع">

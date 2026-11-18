@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { IBM_Plex_Sans_Arabic, Reem_Kufi } from "next/font/google";
 import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from "@/lib/site";
+import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import "./globals.css";
 
 const plex = IBM_Plex_Sans_Arabic({
@@ -41,7 +42,7 @@ export const viewport: Viewport = {
 };
 
 // Applies the saved (or system) theme before first paint to avoid a flash.
-const THEME_SCRIPT = `(function(){try{var t=localStorage.getItem("arnooba:theme");if(t!=="light"&&t!=="dark"){t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}document.documentElement.setAttribute("data-theme",t);document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.setAttribute("content",t==="dark"?"#1b140e":"#f6efe3")})}catch(e){}})()`;
+const THEME_SCRIPT = `(function(){try{var t=localStorage.getItem("arnooba:theme");if(t!=="light"&&t!=="dark"&&t!=="arnooba"){t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}document.documentElement.setAttribute("data-theme",t);var c=t==="dark"?"#1b140e":t==="arnooba"?"#17172b":"#f6efe3";document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.setAttribute("content",c)})}catch(e){}})()`;
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // Per-request CSP nonce from src/proxy.ts; inline scripts without it are blocked.
@@ -51,7 +52,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <head>
         <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
-      <body className="min-h-dvh font-sans antialiased">{children}</body>
+      <body className="min-h-dvh font-sans antialiased">{children}<ServiceWorkerRegister /></body>
     </html>
   );
 }

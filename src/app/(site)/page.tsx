@@ -6,7 +6,7 @@ import { ContinueReading } from "@/components/ContinueReading";
 import { BrandMark } from "@/components/Logo";
 import { SearchForm } from "@/components/SearchForm";
 import { toCard } from "@/lib/book-view";
-import { categoryCounts, countByLang, filmCount, listBooks } from "@/lib/books";
+import { categoryCounts, countByLang, filmCount, listBooks, recentlyUpdatedBooks, trendingBooks } from "@/lib/books";
 import { LANGS, type Lang } from "@/lib/categories";
 import { BOOK_FORMS, arCount } from "@/lib/text";
 
@@ -60,6 +60,23 @@ async function FilmShelf({ lang }: { lang: Lang }) {
   );
 }
 
+async function SmartShelf({ lang, kind }: { lang: Lang; kind: "trending" | "complete" | "updated" }) {
+  const books = kind === "trending"
+    ? await trendingBooks(lang, 6)
+    : kind === "complete"
+      ? (await listBooks({ lang, complete: true, sort: "latest", pageSize: 6 })).items
+      : await recentlyUpdatedBooks(lang, 6);
+  if (!books.length) return null;
+  const title = kind === "trending" ? "الأكثر قراءة هذا الأسبوع" : kind === "complete" ? "كتب وقصص مكتملة" : "تحديثات آخر 24 ساعة";
+  const subtitle = kind === "trending" ? "حسب القراءات المسجلة خلال الأيام السبعة الماضية" : kind === "complete" ? "نسخ راجعنا اكتمالها وليست عينات" : "كتب أضيفت أو حُدّثت مؤخراً";
+  return (
+    <section className="mx-auto max-w-6xl px-4 pt-14" aria-label={title}>
+      <SectionHeader title={title} subtitle={subtitle} href={LANGS[lang].path} />
+      <BookGrid books={books.map(toCard)} />
+    </section>
+  );
+}
+
 const FEATURES = [
   { icon: ShieldCheck, title: "مجاني وقانوني", text: "كل الكتب في الملكية العامة أو برخص حرّة، فتقرأ وتحمّل وأنت مرتاح." },
   { icon: BookOpenText, title: "اقرأ من المتصفح", text: "قارئ مريح بوضع ليلي وتكبير للخط، ويتذكّر أين توقفت." },
@@ -92,8 +109,13 @@ export default async function HomePage() {
       </section>
 
       <ContinueReading />
+      <SmartShelf lang="ar" kind="trending" />
+      <SmartShelf lang="ar" kind="complete" />
+      <SmartShelf lang="ar" kind="updated" />
       <LanguageShelf lang="ar" total={counts.ar} />
       <FilmShelf lang="ar" />
+      <SmartShelf lang="en" kind="trending" />
+      <SmartShelf lang="en" kind="complete" />
       <LanguageShelf lang="en" total={counts.en} />
       <FilmShelf lang="en" />
 

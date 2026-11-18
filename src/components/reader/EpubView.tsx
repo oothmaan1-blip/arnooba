@@ -2,14 +2,16 @@
 
 // Paginated EPUB viewer on top of epub.js. Book scripts never run: the
 // content iframe is sandboxed without allow-scripts.
-import { useEffect, useEffectEvent, useRef, type RefObject } from "react";
+import { useEffect, useEffectEvent, useRef, useState, type RefObject } from "react";
 import type { Book as EpubBook, Location, NavItem, Rendition } from "epubjs";
-import { READER_THEMES, type ReaderTheme } from "./theme";
+import { FONT_OPTIONS, READER_THEMES, type ReaderFont, type ReaderTheme } from "./theme";
 
 export interface EpubHandle {
   next(): void;
   prev(): void;
   goTo(href: string): void;
+  selectedText(): string;
+  clearSelectedText(): void;
 }
 
 export interface TocItem {
@@ -24,9 +26,12 @@ interface Props {
   initialCfi: string | null;
   theme: ReaderTheme;
   fontScale: number;
+  font: ReaderFont;
+  lineHeight: number;
+  pageMargin: number;
   handleRef: RefObject<EpubHandle | null>;
   onReady(): void;
-  onLocation(cfi: string, percent: number | null): void;
+  onLocation(cfi: string, percent: number | null, chapter: string, atEnd: boolean): void;
   onToc(items: TocItem[]): void;
   onLoadProgress(ratio: number): void;
   onError(message: string): void;
@@ -105,21 +110,51 @@ function registerThemes(rendition: Rendition, lang: "ar" | "en") {
         "line-height": lang === "ar" ? "1.95 !important" : "1.65 !important",
       },
       "p, li, blockquote, dd": { "line-height": "inherit !important" },
-      "body *": { color: "inherit !important", "background-color": "transparent !important" },
+      "body *": { color: "inherit !important", "background-color": "transparent !important", "font-family": "inherit !important" },
       a: { color: `${t.accent} !important` },
       img: { "max-width": "100% !important", height: "auto !important" },
     });
   }
 }
 
-export default function EpubView({ url, lang, initialCfi, theme, fontScale, handleRef, ...events }: Props) {
+function applyTypography(rendition: Rendition, font: ReaderFont, lineHeight: number, pageMargin: number) {
+  const fontOption = FONT_OPTIONS[font];
+  const family = fontOption.variable
+    ? getComputedStyle(document.documentElement).getPropertyValue(fontOption.variable).trim() || fontOption.css
+    : fontOption.css;
+  const bundledFamily = fontOption.fontFace ?? (fontOption.variable ? family.replace(/["']/g, "").split(",")[0].trim() : null);
+  if (bundledFamily) {
+    const contents = rendition.getContents() as unknown as { addStylesheetCss(css: string, key: string): Promise<void> }[];
+    const rules: string[] = [];
+    for (const sheet of Array.from(document.styleSheets)) {
+      try {
+        for (const rule of Array.from(sheet.cssRules)) {
+          if (rule.type !== CSSRule.FONT_FACE_RULE) continue;
+          const fontRule = rule as CSSFontFaceRule;
+          const declared = fontRule.style.getPropertyValue("font-family").replace(/["']/g, "").trim();
+          if (declared === bundledFamily) rules.push(fontRule.cssText);
+        }
+      } catch {
+        // Ignore cross-origin stylesheets; the app's own bundled font sheets are same-origin.
+      }
+    }
+    if (rules.length) for (const content of contents) void content.addStylesheetCss(rules.join("\n"), `arnooba-${font}`);
+  }
+  rendition.themes.font(family);
+  rendition.themes.override("line-height", String(lineHeight), true);
+  rendition.themes.override("padding-inline", `${pageMargin}%`, true);
+}
+
+export default function EpubView({ url, lang, initialCfi, theme, fontScale, font, lineHeight, pageMargin, handleRef, ...events }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const renditionRef = useRef<Rendition | null>(null);
+  const selectedTextRef = useRef("");
   const rtl = lang === "ar";
+  const [turningPage, setTurningPage] = useState(false);
 
-  const initialLook = useEffectEvent(() => ({ theme, fontScale }));
+  const initialLook = useEffectEvent(() => ({ theme, fontScale, font, lineHeight, pageMargin }));
   const ready = useEffectEvent(() => events.onReady());
-  const located = useEffectEvent((cfi: string, percent: number | null) => events.onLocation(cfi, percent));
+  const located = useEffectEvent((cfi: string, percent: number | null, chapter: string, atEnd: boolean) => events.onLocation(cfi, percent, chapter, atEnd));
   const gotToc = useEffectEvent((items: TocItem[]) => events.onToc(items));
   const loadProgress = useEffectEvent((r: number) => events.onLoadProgress(r));
   const fail = useEffectEvent((message: string) => events.onError(message));
@@ -135,10 +170,24 @@ export default function EpubView({ url, lang, initialCfi, theme, fontScale, hand
     let locationsReady = false;
     let displayed = false;
     let lastSize = "";
+    let transitionTimer: ReturnType<typeof setTimeout> | undefined;
+    const selectionDocs = new WeakSet<Document>();
+    const bindSelectionCapture = () => {
+      const contents = renditionRef.current?.getContents() as unknown as { document: Document; window: Window }[] | undefined;
+      for (const content of contents ?? []) {
+        if (selectionDocs.has(content.document)) continue;
+        selectionDocs.add(content.document);
+        content.document.addEventListener("selectionchange", () => {
+          const text = content.window.getSelection()?.toString().trim();
+          if (text) selectedTextRef.current = text.slice(0, 1200);
+        });
+      }
+    };
     const turn = async (forward: boolean) => {
       const r = renditionRef.current;
       if (!r || turning) return;
       turning = true;
+      setTurningPage(true);
       try {
         const scroller = () => (r as unknown as { manager?: { container?: HTMLElement } }).manager?.container;
         const before = (r.currentLocation() as unknown as Location | undefined)?.start;
@@ -153,6 +202,8 @@ export default function EpubView({ url, lang, initialCfi, theme, fontScale, hand
         }
       } finally {
         turning = false;
+        clearTimeout(transitionTimer);
+        transitionTimer = setTimeout(() => setTurningPage(false), 180);
       }
     };
     // Arrow keys follow the book's direction: ← moves forward in Arabic.
@@ -194,11 +245,16 @@ export default function EpubView({ url, lang, initialCfi, theme, fontScale, hand
         const look = initialLook();
         rendition.themes.select(look.theme);
         rendition.themes.fontSize(`${look.fontScale}%`);
+        applyTypography(rendition, look.font, look.lineHeight, look.pageMargin);
 
         rendition.on("relocated", (location: Location) => {
+          bindSelectionCapture();
+          const look = initialLook();
+          applyTypography(rendition, look.font, look.lineHeight, look.pageMargin);
           const cfi = location.start.cfi;
           const percent = book && locationsReady ? book.locations.percentageFromCfi(cfi) * 100 : null;
-          located(cfi, percent);
+          const chapterEnd = location.atEnd || location.start.href !== location.end.href || (location.start.displayed.total > 0 && location.start.displayed.page >= location.start.displayed.total);
+          located(cfi, percent, location.start.href, chapterEnd);
         });
         rendition.on("keyup", onKey);
         rendition.on("touchstart", onTouchStart);
@@ -211,6 +267,7 @@ export default function EpubView({ url, lang, initialCfi, theme, fontScale, hand
         }
         if (cancelled) return;
         displayed = true;
+        bindSelectionCapture();
         lastSize = `${crispWidth(host.clientWidth)}x${Math.floor(host.clientHeight)}`;
         ready();
 
@@ -227,7 +284,8 @@ export default function EpubView({ url, lang, initialCfi, theme, fontScale, hand
         if (cancelled) return;
         const current = rendition.currentLocation() as unknown as Location | undefined;
         if (current?.start?.cfi) {
-          located(current.start.cfi, book.locations.percentageFromCfi(current.start.cfi) * 100);
+          const chapterEnd = current.atEnd || current.start.href !== current.end.href || (current.start.displayed.total > 0 && current.start.displayed.page >= current.start.displayed.total);
+          located(current.start.cfi, book.locations.percentageFromCfi(current.start.cfi) * 100, current.start.href, chapterEnd);
         }
       } catch (err) {
         if (!cancelled) {
@@ -241,7 +299,22 @@ export default function EpubView({ url, lang, initialCfi, theme, fontScale, hand
     handleRef.current = {
       next: () => void turn(true),
       prev: () => void turn(false),
-      goTo: (href) => void renditionRef.current?.display(href),
+      goTo: (href) => {
+        const display = renditionRef.current?.display(href);
+        if (!display) return;
+        setTurningPage(true);
+        void display.catch(() => undefined).finally(() => {
+          clearTimeout(transitionTimer);
+          transitionTimer = setTimeout(() => setTurningPage(false), 180);
+        });
+      },
+      selectedText: () => {
+        const contents = renditionRef.current?.getContents() as unknown as { window: Window }[] | undefined;
+        const current = contents?.map((content) => content.window.getSelection()?.toString().trim() ?? "").filter(Boolean).join("\n\n");
+        if (current) selectedTextRef.current = current.slice(0, 1200);
+        return selectedTextRef.current;
+      },
+      clearSelectedText: () => { selectedTextRef.current = ""; },
     };
 
     let resizeTimer: ReturnType<typeof setTimeout> | undefined;
@@ -263,6 +336,7 @@ export default function EpubView({ url, lang, initialCfi, theme, fontScale, hand
       cancelled = true;
       observer.disconnect();
       clearTimeout(resizeTimer);
+      clearTimeout(transitionTimer);
       window.removeEventListener("keyup", onKey);
       handleRef.current = null;
       renditionRef.current = null;
@@ -278,8 +352,12 @@ export default function EpubView({ url, lang, initialCfi, theme, fontScale, hand
     renditionRef.current?.themes.fontSize(`${fontScale}%`);
   }, [fontScale]);
 
+  useEffect(() => {
+    if (renditionRef.current) applyTypography(renditionRef.current, font, lineHeight, pageMargin);
+  }, [font, lineHeight, pageMargin]);
+
   return (
-    <div className="mx-auto h-full w-full max-w-3xl px-2 sm:px-6">
+    <div className={`mx-auto h-full w-full max-w-3xl px-2 sm:px-6${turningPage ? " reader-page-turn" : ""}`}>
       <div ref={hostRef} className="flex h-full w-full justify-center overflow-hidden" />
     </div>
   );

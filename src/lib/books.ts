@@ -135,6 +135,7 @@ function paging(page?: number, pageSize?: number) {
 interface Filters {
   lang?: Lang;
   category?: CategoryId;
+  complete?: boolean;
   /** Only books that were made into films. */
   film?: boolean;
   includeUnpublished?: boolean;
@@ -151,6 +152,7 @@ function filterClauses(filters: Filters, params: unknown[]): string[] {
     params.push(filters.category);
     where.push(`category = $${params.length}`);
   }
+  if (filters.complete) where.push("complete");
   if (filters.film) where.push("film <> ''");
   return where;
 }
@@ -187,6 +189,33 @@ export async function listBooks(
   const params: unknown[] = [];
   const where = filterClauses(opts, params);
   return pageOf(where, params, ORDER_BY[opts.sort ?? "popular"], [], paging(opts.page, opts.pageSize));
+}
+
+export async function trendingBooks(lang: Lang, limit = 12): Promise<Book[]> {
+  const rows = await sql<BookRow>(
+    `SELECT ${COLUMNS} FROM books b
+     JOIN (
+       SELECT book_id, COUNT(*)::int AS weekly_reads
+       FROM book_read_events
+       WHERE created_at >= now() - interval '7 days'
+       GROUP BY book_id
+     ) recent ON recent.book_id = b.id
+     WHERE b.published AND b.lang = $1
+     ORDER BY recent.weekly_reads DESC, b.id DESC
+     LIMIT $2`,
+    [lang, Math.min(24, Math.max(1, limit))],
+  );
+  return rows.map(toBook);
+}
+
+export async function recentlyUpdatedBooks(lang: Lang, limit = 12): Promise<Book[]> {
+  const rows = await sql<BookRow>(
+    `SELECT ${COLUMNS} FROM books
+     WHERE published AND lang = $1 AND updated_at >= now() - interval '24 hours'
+     ORDER BY updated_at DESC, id DESC LIMIT $2`,
+    [lang, Math.min(24, Math.max(1, limit))],
+  );
+  return rows.map(toBook);
 }
 
 export async function searchBooks(
