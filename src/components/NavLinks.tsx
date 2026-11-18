@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/site";
+import { InstallAppButton } from "./InstallAppButton";
 
 const LINKS = [
   { href: "/", label: "الرئيسية" },
@@ -68,26 +69,31 @@ export function MobileMenu() {
       >
         {open ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
       </button>
-      {open && (
-        <nav id="mobile-menu" aria-label="الأقسام" className="absolute inset-x-0 top-full border-b border-line bg-bg px-4 pb-4 shadow-lg">
-          <ul className="flex flex-col gap-1 pt-2">
-            {LINKS.map((link) => (
-              <li key={link.href}>
-                <Link
-                  href={link.href}
-                  aria-current={isActive(pathname, link.href) ? "page" : undefined}
-                  className={cn(
-                    "block rounded-xl px-4 py-3 text-base font-medium",
-                    isActive(pathname, link.href) ? "bg-surface-2 text-ink" : "text-muted",
-                  )}
-                >
-                  {link.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      )}
+      <nav
+        id="mobile-menu"
+        aria-label="الأقسام"
+        className={cn("absolute inset-x-0 top-full border-b border-line bg-bg px-4 pb-4 shadow-lg", !open && "hidden")}
+      >
+        <ul className="flex flex-col gap-1 pt-2">
+          {LINKS.map((link) => (
+            <li key={link.href}>
+              <Link
+                href={link.href}
+                aria-current={isActive(pathname, link.href) ? "page" : undefined}
+                className={cn(
+                  "block rounded-xl px-4 py-3 text-base font-medium",
+                  isActive(pathname, link.href) ? "bg-surface-2 text-ink" : "text-muted",
+                )}
+              >
+                {link.label}
+              </Link>
+            </li>
+          ))}
+          <li className="mt-2 border-t border-line pt-3">
+            <InstallAppButton />
+          </li>
+        </ul>
+      </nav>
     </div>
   );
 }

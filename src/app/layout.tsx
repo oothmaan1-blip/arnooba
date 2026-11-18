@@ -26,6 +26,7 @@ export const metadata: Metadata = {
   title: { default: `${SITE_NAME} | كتب مجانية للقراءة والتحميل`, template: `%s | ${SITE_NAME}` },
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
+  appleWebApp: { capable: true, title: SITE_NAME, statusBarStyle: "default" },
   openGraph: { siteName: SITE_NAME, locale: "ar_IQ", type: "website" },
   formatDetection: { telephone: false },
   // Google Search Console ownership check (the "HTML tag" method).
