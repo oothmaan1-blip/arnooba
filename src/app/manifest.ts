@@ -13,7 +13,9 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: "/",
     display: "standalone",
     background_color: "#f6efe3",
-    theme_color: "#85552b",
+    // The install window's Android system bars should blend into the dark page,
+    // not use the walnut button color.
+    theme_color: "#1b140e",
     icons: [
       { src: "/pwa/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
       { src: "/pwa/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },

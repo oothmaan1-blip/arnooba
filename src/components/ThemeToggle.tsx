@@ -7,6 +7,9 @@ export function ThemeToggle() {
     const root = document.documentElement;
     const next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
     root.setAttribute("data-theme", next);
+    document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => {
+      meta.setAttribute("content", next === "dark" ? "#1b140e" : "#f6efe3");
+    });
     try {
       localStorage.setItem("arnooba:theme", next);
     } catch {

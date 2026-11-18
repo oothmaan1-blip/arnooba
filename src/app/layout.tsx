@@ -41,7 +41,7 @@ export const viewport: Viewport = {
 };
 
 // Applies the saved (or system) theme before first paint to avoid a flash.
-const THEME_SCRIPT = `(function(){try{var t=localStorage.getItem("arnooba:theme");if(t!=="light"&&t!=="dark"){t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}document.documentElement.setAttribute("data-theme",t)}catch(e){}})()`;
+const THEME_SCRIPT = `(function(){try{var t=localStorage.getItem("arnooba:theme");if(t!=="light"&&t!=="dark"){t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}document.documentElement.setAttribute("data-theme",t);document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){m.setAttribute("content",t==="dark"?"#1b140e":"#f6efe3")})}catch(e){}})()`;
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // Per-request CSP nonce from src/proxy.ts; inline scripts without it are blocked.
