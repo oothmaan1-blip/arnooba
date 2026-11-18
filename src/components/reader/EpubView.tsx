@@ -115,6 +115,16 @@ function registerThemes(rendition: Rendition, lang: "ar" | "en") {
         "line-height": "inherit !important",
         ...(textAlignment ? { "text-align": textAlignment, "text-align-last": textAlignment, "word-spacing": "normal !important" } : {}),
       },
+      // Arabic EPUBs often ship selectors such as `.paragraph-block p` with
+      // `text-align: justify`. The book metadata determines this is Arabic,
+      // so do not depend on an optional dir attribute inside the EPUB.
+      ...(textAlignment ? {
+        'body p:not(#arnooba-reader-override), body li:not(#arnooba-reader-override), body blockquote:not(#arnooba-reader-override), body dd:not(#arnooba-reader-override)': {
+          "text-align": textAlignment,
+          "text-align-last": textAlignment,
+          "word-spacing": "normal !important",
+        },
+      } : {}),
       "body *": {
         color: "inherit !important",
         "background-color": "transparent !important",
